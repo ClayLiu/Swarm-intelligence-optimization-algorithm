@@ -59,7 +59,8 @@ class SalpSwarm(baseSIOA):
     def c1_formula(self, t : int, T : int) -> float:
         '''
             返回当代 c1 值 \n
-            这里使用非线性减少，可以更好为其他减少方式 \n
+            这里使用非线性减少，可以更换为其他减少方式 \n
+            c1 = 2e^{-\left(\frac{4t}{T}\right)^2} \n
             :param t: 当前迭代次数 \n
             :param T: 最大迭代次数 \n
             :return float:
