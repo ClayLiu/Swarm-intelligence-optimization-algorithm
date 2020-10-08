@@ -28,7 +28,7 @@ class Salp(baseIndividual):
 
     def update_other(self, prev):
         '''
-            更新链头樽海鞘的位置
+            更新链中其他樽海鞘的位置
         '''
         self.position += prev.position
         self.position /= 2
