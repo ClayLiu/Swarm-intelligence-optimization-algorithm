@@ -1,3 +1,7 @@
+'''
+    提供一些目标函数
+'''
+
 import numpy as np 
 from math import pi
 from Common.constants import *
