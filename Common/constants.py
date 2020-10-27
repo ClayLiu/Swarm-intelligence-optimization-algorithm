@@ -1,3 +1,5 @@
+from math import e, pi
+
 class Bounds():
     upper = 1
     lower = 0
