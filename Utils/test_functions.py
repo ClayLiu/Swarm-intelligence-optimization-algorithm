@@ -38,7 +38,7 @@ class base_unconstrained_objective_func():
         return 0
 
 
-    def plot(self, step_length : int = 128, save_figure_path : str = None, dpi : int = 300, area : tuple = None):
+    def plot(self, step_length : int = 128, save_figure_path : str = None, dpi : int = 300, area : tuple = None, hold_on = False):
         '''
             画出函数曲面 \n
             :param step_length: 画图步长 \n
@@ -78,8 +78,9 @@ class base_unconstrained_objective_func():
         
         if save_figure_path:
             plt.savefig(save_figure_path, dpi = dpi)
-
-        plt.show()
+        
+        if not hold_on: # 暂不显示，等待外部一起显示
+            plt.show()
 
         # 还原现场
         self.__init__(x_dim_save)
@@ -306,3 +307,6 @@ class Schaffer(base_unconstrained_objective_func):
         super(Schaffer, self).func(x)
         sum_square_x = np.sum(x ** 2)
         return ((sin(sqrt(sum_square_x)) ** 2 - 0.5) / ((1 + 0.001 * sum_square_x) ** 2)) - 0.5
+
+unimodal_function = [Sphere, Step, Schwefel_1_2, Schwefel_2_21, Schwefel_2_22, Rosenbrock]
+multimodal_functions = [Rastrigin, Schwefel_2_26, Griewank, Ackley, Foxholes, Schaffer]
