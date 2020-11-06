@@ -34,11 +34,6 @@ class SalpSwarm_with_prev_best(SalpSwarm):
 
     individual_class_build_up_func = Salp_with_pbest
 
-    def __init__(self, objective_func, salp_num : int, search_space : np.ndarray, constraint_func = None, head_num = 1):
-        super(SalpSwarm_with_prev_best, self).__init__(
-            objective_func, salp_num, search_space, constraint_func = constraint_func
-        )
-        self.head_num = head_num
 
     # def c1_formula(self, t : int, T : int) -> float:
     #     change_point = T >> 1
@@ -46,6 +41,31 @@ class SalpSwarm_with_prev_best(SalpSwarm):
     #         return 2 * ((t - 1) / change_point)
     #     else:
     #         return 2 * exp(- (4 * (t - change_point) / (T - change_point)) ** 2)
+
+    def __get_next_generation__(self, c1 : float):
+        for i, salp in enumerate(self.salp_swarm):
+            if i < self.head_num:
+                salp.update_head(self.global_best_position, c1)
+                prev_salp = salp
+            else:
+                salp.update_other(prev_salp)
+                prev_salp = salp
+            
+            salp.stay_prev_best()
+            
+            salp.bound_check()
+            if self.constraint_func:
+                while not self.constraint_func(salp.position):
+                    salp.refresh(self.search_space)
+            
+            fitness = self.objective_func(salp.position)
+            salp.update_prev_best(fitness)
+            self.fitness[i] = fitness
+
+            if self.global_best_fitness > fitness:
+                self.global_best_fitness = fitness
+                self.global_best_position = salp.position.copy()
+                
 
     def iteration(self, iter_num : int, if_show_process = True) -> InterationResult:
         '''
@@ -59,47 +79,25 @@ class SalpSwarm_with_prev_best(SalpSwarm):
         self.get_fitness()
         best_salp_index = np.argmin(self.fitness)
 
-        global_best_fitness = self.fitness[best_salp_index]
-        global_best_position = self.salp_swarm[best_salp_index].position
+        self.global_best_fitness = self.fitness[best_salp_index]
+        self.global_best_position = self.salp_swarm[best_salp_index].position.copy()
 
-        best_fitness_value_history.append(global_best_fitness)
+        best_fitness_value_history.append(self.global_best_fitness)
 
         for salp, fitness in zip(self.salp_swarm, self.fitness):
             salp.update_prev_best(fitness)
 
         interator = tqdm(range(1, iter_num + 1)) if if_show_process else range(1, iter_num + 1)   # 根据 if_show_process 选择迭代器
         for t in interator:
-            c_1 = self.c1_formula(t, iter_num)
-            for i, salp in enumerate(self.salp_swarm):
-                if i < self.head_num:
-                    salp.update_head(global_best_position, c_1)
-                    prev_salp = salp
-                else:
-                    salp.update_other(prev_salp)
-                    prev_salp = salp
-                
-                salp.stay_prev_best()
-                
-                salp.bound_check()
-                if self.constraint_func:
-                    while not self.constraint_func(salp.position):
-                        salp.refresh(self.search_space)
-                
-                fitness = self.objective_func(salp.position)
-                salp.update_prev_best(fitness)
-                self.fitness[i] = fitness
+            c1 = self.c1_formula(t, iter_num)
+            self.__get_next_generation__(c1)
 
-            best_salp_index = np.argmin(self.fitness)
-            if global_best_fitness > self.fitness[best_salp_index]:
-                global_best_fitness = self.fitness[best_salp_index]
-                global_best_position = self.salp_swarm[best_salp_index].position
-
-            best_fitness_value_history.append(global_best_fitness)
+            best_fitness_value_history.append(self.global_best_fitness)
 
         return InterationResult(
                 {
-                    'best_position' : global_best_position,
-                    'best_fitness' : global_best_fitness,
+                    'best_position' : self.global_best_position,
+                    'best_fitness' : self.global_best_fitness,
                     'best_fitness_value_history' : best_fitness_value_history
                 }
             )
