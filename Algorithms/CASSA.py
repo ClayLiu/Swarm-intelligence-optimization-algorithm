@@ -53,6 +53,7 @@ class SalpSwarm_chaotic(SalpSwarm):
         super(SalpSwarm_chaotic, self).__init__(
             objective_func, salp_num, search_space, constraint_func
         )
+        self.head_num = (self.salp_num) >> 1
         
     def __build_up_swarm__(self):
         individual_swarm = []
@@ -70,7 +71,7 @@ class SalpSwarm_chaotic(SalpSwarm):
         
         self.salp_swarm = self.individual_swarm     # 给群体起名，方便迭代写函数
         self.salp_num = self.individuals_num
-
+        
 
     def current_weight_formula(self, t : int, T : int) -> float:
         '''
@@ -83,6 +84,25 @@ class SalpSwarm_chaotic(SalpSwarm):
         '''
         return self.start_weight * (self.start_weight - self.end_weight) * (T - t) / T
 
+    def __get_next_generation__(self, c1 : float, weight : float):
+        '''
+            生成下一代
+        '''
+        # 链头产生新解
+        for head_salp in self.salp_swarm[: self.head_num]:
+            head_salp.update_head(self.best_position, c1)
+
+        prev = head_salp
+        # 其他产生新解
+        for other_salp in self.salp_swarm[self.head_num :]:
+            other_salp.update_other(prev, weight)
+            prev = other_salp
+        
+        if self.constraint_func:
+            self.constraint()
+        else:
+            self.bound_check()
+
 
     def iteration(self, iter_num : int, if_show_process = True) -> InterationResult:
         best_fitness_value = []
@@ -90,40 +110,26 @@ class SalpSwarm_chaotic(SalpSwarm):
         self.get_fitness()
         best_salp_index = np.argmin(self.fitness)
         best_fitness_value.append(self.fitness[best_salp_index])
-        best_position = self.salp_swarm[best_salp_index].position
-        half_num = (self.salp_num) >> 1
+        self.best_position = self.salp_swarm[best_salp_index].position.copy()
 
         interator = tqdm(range(1, iter_num + 1)) if if_show_process else range(1, iter_num + 1)   # 根据 if_show_process 选择迭代器
         for t in interator:
-            c_1 = self.c1_formula(t, iter_num)
+            c1 = self.c1_formula(t, iter_num)
             current_weight = self.current_weight_formula(t, iter_num)
 
-            # 链头产生新解
-            for i in range(half_num):
-                self.salp_swarm[i].update_head(best_position, c_1)
-
-            # 其他产生新解
-            for i in range(half_num, self.salp_num):
-                self.salp_swarm[i].update_other(self.salp_swarm[i - 1], current_weight)
-            
-            if self.constraint_func:
-                self.constraint()
-            else:
-                self.bound_check()
+            self.__get_next_generation__(c1, current_weight)
             
             self.get_fitness()
             best_salp_index = np.argmin(self.fitness)
             best_fitness_value.append(self.fitness[best_salp_index])
 
-            best_position = self.salp_swarm[best_salp_index].position.copy()
+            self.best_position = self.salp_swarm[best_salp_index].position.copy()
 
         
         return InterationResult(
                 {
-                    'best_position' : best_position,
+                    'best_position' : self.best_position,
                     'best_fitness' : self.fitness[best_salp_index],
                     'best_fitness_value_history' : best_fitness_value
                 }
             )
-
-
