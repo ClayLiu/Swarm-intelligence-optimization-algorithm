@@ -59,7 +59,7 @@ class baseSIOA():
         if self.constraint_func:
             self.constraint()
 
-        self.fitness = np.zeros(self.individuals_num) + 1e10
+        self.fitness = np.zeros(self.individuals_num) + float('inf')
 
     def refresh_swarm(self):
         del self.individual_swarm
@@ -79,5 +79,24 @@ class baseSIOA():
         for i, individual in enumerate(self.individual_swarm):
             self.fitness[i] = self.objective_func(individual.position.copy())
     
+    def __get_next_generation__(self):
+        pass
+
     def iteration(self, iter_num : int) -> InterationResult:
         pass
+
+def Selection(Swarm : baseSIOA, have_fitness = True):
+    '''
+        选择机制
+    '''
+    if not have_fitness:
+        Swarm.get_fitness()
+    
+    sorted_index = np.argsort(Swarm.fitness)
+    
+    best_half_index = sorted_index < (Swarm.individuals_num >> 1)
+    worst_half_index = sorted_index >= (Swarm.individuals_num >> 1)
+
+    # 用好的一半替代差的一半的位置
+    for good, bad in zip(best_half_index, worst_half_index):
+        Swarm.individual_swarm[bad].position = Swarm.individual_swarm[good].position
