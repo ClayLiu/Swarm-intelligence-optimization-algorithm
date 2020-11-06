@@ -41,14 +41,16 @@ class SalpSwarm(baseSIOA):
         :param particle_num:    樽海鞘个数 \n
         :param search_space:    x 在各维度的取值范围，shape = (2, x_dim) \n
         :param constraint_func: 约束条件函数 返回值为 bool 类型\n
+        :param head_num:        头樽海鞘的个数，默认为 1 \n
     '''
     
     individual_class_build_up_func = Salp
 
-    def __init__(self, objective_func, salp_num : int, search_space : np.ndarray, constraint_func = None):
+    def __init__(self, objective_func, salp_num : int, search_space : np.ndarray, constraint_func = None, head_num = 1):
         super(SalpSwarm, self).__init__(
             objective_func, salp_num, search_space, constraint_func = constraint_func
         )
+        self.head_num = head_num
 
     def __build_up_swarm__(self):
         ''' 构建樽海鞘群 '''
@@ -67,6 +69,26 @@ class SalpSwarm(baseSIOA):
         '''
         return 2 * exp(- (4 * t / T) ** 2)
 
+    def __get_next_generation__(self, c1 : float):
+        '''
+            生成下一代群体
+        '''
+        # 链头产生新解
+        for head_salp in self.salp_swarm[:self.head_num]:
+            head_salp.update_head(self.best_position, c1)
+
+        prev = head_salp
+        # 其他产生新解
+        for other_salp in self.salp_swarm[self.head_num:]:
+            other_salp.update_other(prev)
+            prev = other_salp
+        
+        if self.constraint_func:
+            self.constraint()
+        else:
+            self.bound_check()
+
+
     def iteration(self, iter_num : int, if_show_process = True) -> InterationResult:
         '''
             樽海鞘群算法的迭代函数 \n
@@ -79,34 +101,24 @@ class SalpSwarm(baseSIOA):
         self.get_fitness()
         best_salp_index = np.argmin(self.fitness)
         best_fitness_value.append(self.fitness[best_salp_index])
-        best_position = self.salp_swarm[best_salp_index].position
+        self.best_position = self.salp_swarm[best_salp_index].position.copy()
 
         interator = tqdm(range(1, iter_num + 1)) if if_show_process else range(1, iter_num + 1)   # 根据 if_show_process 选择迭代器
         for t in interator:
-            c_1 = self.c1_formula(t, iter_num)
+            c1 = self.c1_formula(t, iter_num)
             
-            # 链头产生新解
-            self.salp_swarm[0].update_head(best_position, c_1)
+            self.__get_next_generation__(c1)
 
-            # 其他产生新解
-            for i in range(1, self.salp_num):
-                self.salp_swarm[i].update_other(self.salp_swarm[i - 1])
-            
-            if self.constraint_func:
-                self.constraint()
-            else:
-                self.bound_check()
-            
             self.get_fitness()
             best_salp_index = np.argmin(self.fitness)
             best_fitness_value.append(self.fitness[best_salp_index])
 
-            best_position = self.salp_swarm[best_salp_index].position.copy()
+            self.best_position = self.salp_swarm[best_salp_index].position.copy()
 
         
         return InterationResult(
                 {
-                    'best_position' : best_position,
+                    'best_position' : self.best_position,
                     'best_fitness' : self.fitness[best_salp_index],
                     'best_fitness_value_history' : best_fitness_value
                 }
