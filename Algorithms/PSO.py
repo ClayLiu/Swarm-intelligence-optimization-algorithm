@@ -86,6 +86,30 @@ class ParticleSwarm(baseSIOA):
         return 0.9 - (t / (T - 1)) * 0.5    # 因为在 iteration 方法里的迭代次数 t 由 range() 生成，
                                             # 为序列 [0, ..., max_iter_num - 1]，所以这里 / (T - 1)
 
+    def __get_next_generation__(self, omega : float):
+        '''
+            生成下一代群体
+        '''
+        
+        for i, particle in enumerate(self.particle_swarm):
+            particle.update_position_and_velocity(omega, self.global_best_position)
+            particle.bound_check()
+
+            # 若有约束条件，则判断更新后是否在可行域内，若不在则重置粒子
+            if self.constraint_func:
+                while not self.constraint_func(particle.position):
+                    particle.refresh(self.search_space)
+
+            fitness = self.objective_func(particle.position.copy())
+            self.fitness[i] = fitness
+            particle.update_prev_best(fitness)
+
+            # 更新群体最优位置
+            if self.global_best_fitness > fitness:
+                self.global_best_fitness = fitness
+                self.global_best_position = particle.position.copy()
+
+
     def iteration(self, iter_num : int, if_show_process = True) -> InterationResult:
         '''
             粒子群算法的迭代函数 \n
@@ -99,8 +123,8 @@ class ParticleSwarm(baseSIOA):
         best_particle_index = np.argmin(self.fitness)                   # 找到最优的粒子的索引
         best_fitness_value.append(self.fitness[best_particle_index])    # 记录最优适应度值    
         
-        global_best_position = self.particle_swarm[best_particle_index].position.copy()
-        global_best_fitness = self.fitness[best_particle_index]
+        self.global_best_position = self.particle_swarm[best_particle_index].position.copy()
+        self.global_best_fitness = self.fitness[best_particle_index]
 
 
         for particle, fitness in zip(self.particle_swarm, self.fitness):
@@ -109,30 +133,13 @@ class ParticleSwarm(baseSIOA):
         interator = tqdm(range(iter_num)) if if_show_process else range(iter_num)   # 根据 if_show_process 选择迭代器
         for t in interator:
             omega = self.omega_formula(t, iter_num)
-
-            for particle in self.particle_swarm:
-                particle.update_position_and_velocity(omega, global_best_position)
-                particle.bound_check()
-
-                # 若有约束条件，则判断更新后是否在可行域内，若不在则重置粒子
-                if self.constraint_func:
-                    while not self.constraint_func(particle.position):
-                        particle.refresh(self.search_space)
-
-                fitness = self.objective_func(particle.position.copy())
-                particle.update_prev_best(fitness)
-
-                # 更新群体最优位置
-                if global_best_fitness > fitness:
-                    global_best_fitness = fitness
-                    global_best_position = particle.position.copy()
-
-            best_fitness_value.append(global_best_fitness)
+            self.__get_next_generation__(omega)
+            best_fitness_value.append(self.global_best_fitness)
 
         return InterationResult(
             {
-                'best_position' : global_best_position,
-                'best_fitness' : global_best_fitness,
+                'best_position' : self.global_best_position,
+                'best_fitness' : self.global_best_fitness,
                 'best_fitness_value_history' : best_fitness_value
             }
         )            
