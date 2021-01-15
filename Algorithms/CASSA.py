@@ -2,7 +2,7 @@ import numpy as np
 from tqdm import tqdm
 
 from Algorithms.SSA import Salp, SalpSwarm
-from Common.SwarmIntelligenceOptimizationAlgorithm import InterationResult
+from Common.SwarmIntelligenceOptimizationAlgorithm import IterationResult
 
 class Salp_chaotic(Salp):
     def __tent_ize__(self, x : np.ndarray, u = 2) -> np.ndarray:
@@ -103,8 +103,9 @@ class SalpSwarm_chaotic(SalpSwarm):
         else:
             self.bound_check()
 
+        self.get_fitness()
 
-    def iteration(self, iter_num : int, if_show_process = True) -> InterationResult:
+    def iteration(self, iter_num : int, if_show_process = True) -> IterationResult:
         best_fitness_value = []
         
         self.get_fitness()
@@ -112,21 +113,20 @@ class SalpSwarm_chaotic(SalpSwarm):
         best_fitness_value.append(self.fitness[best_salp_index])
         self.best_position = self.salp_swarm[best_salp_index].position.copy()
 
-        interator = tqdm(range(1, iter_num + 1)) if if_show_process else range(1, iter_num + 1)   # 根据 if_show_process 选择迭代器
-        for t in interator:
+        iterator = tqdm(range(1, iter_num + 1)) if if_show_process else range(1, iter_num + 1)   # 根据 if_show_process 选择迭代器
+        for t in iterator:
             c1 = self.c1_formula(t, iter_num)
             current_weight = self.current_weight_formula(t, iter_num)
 
             self.__get_next_generation__(c1, current_weight)
             
-            self.get_fitness()
             best_salp_index = np.argmin(self.fitness)
             best_fitness_value.append(self.fitness[best_salp_index])
 
             self.best_position = self.salp_swarm[best_salp_index].position.copy()
 
         
-        return InterationResult(
+        return IterationResult(
                 {
                     'best_position' : self.best_position,
                     'best_fitness' : self.fitness[best_salp_index],
