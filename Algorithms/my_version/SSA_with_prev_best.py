@@ -4,7 +4,7 @@ from tqdm import tqdm
 
 from Common.constants import *
 from Algorithms.SSA import SalpSwarm, Salp
-from Common.SwarmIntelligenceOptimizationAlgorithm import InterationResult
+from Common.SwarmIntelligenceOptimizationAlgorithm import IterationResult
 
 class Salp_with_pbest(Salp):
     def __init__(self, search_space : np.ndarray):
@@ -34,14 +34,6 @@ class SalpSwarm_with_prev_best(SalpSwarm):
 
     individual_class_build_up_func = Salp_with_pbest
 
-
-    # def c1_formula(self, t : int, T : int) -> float:
-    #     change_point = T >> 1
-    #     if t < change_point:
-    #         return 2 * ((t - 1) / change_point)
-    #     else:
-    #         return 2 * exp(- (4 * (t - change_point) / (T - change_point)) ** 2)
-
     def __get_next_generation__(self, c1 : float):
         for i, salp in enumerate(self.salp_swarm):
             if i < self.head_num:
@@ -65,9 +57,9 @@ class SalpSwarm_with_prev_best(SalpSwarm):
             if self.global_best_fitness > fitness:
                 self.global_best_fitness = fitness
                 self.global_best_position = salp.position.copy()
-                
 
-    def iteration(self, iter_num : int, if_show_process = True) -> InterationResult:
+
+    def iteration(self, iter_num : int, if_show_process = True) -> IterationResult:
         '''
             樽海鞘群算法的迭代函数 \n
             :param iter_num: 最大迭代次数 \n
@@ -87,14 +79,14 @@ class SalpSwarm_with_prev_best(SalpSwarm):
         for salp, fitness in zip(self.salp_swarm, self.fitness):
             salp.update_prev_best(fitness)
 
-        interator = tqdm(range(1, iter_num + 1)) if if_show_process else range(1, iter_num + 1)   # 根据 if_show_process 选择迭代器
-        for t in interator:
+        iterator = tqdm(range(1, iter_num + 1)) if if_show_process else range(1, iter_num + 1)   # 根据 if_show_process 选择迭代器
+        for t in iterator:
             c1 = self.c1_formula(t, iter_num)
             self.__get_next_generation__(c1)
 
             best_fitness_value_history.append(self.global_best_fitness)
 
-        return InterationResult(
+        return IterationResult(
                 {
                     'best_position' : self.global_best_position,
                     'best_fitness' : self.global_best_fitness,
