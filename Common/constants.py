@@ -10,3 +10,6 @@ class MatrixShapeIndex():
 
 MatrixShapeIndex = MatrixShapeIndex()
 Bounds = Bounds()
+
+inf = 1e100
+epsilon = 1e-10
