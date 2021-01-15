@@ -1,11 +1,11 @@
 import numpy as np 
 from Common.constants import *
 
-class InterationResult():
+class IterationResult():
     def __init__(self, Result_dict : dict):
         self.best_position = Result_dict['best_position']
         self.best_fitness = Result_dict['best_fitness']
-        self.best_fitness_value_history = Result_dict['best_fitness_value_history']
+        self.best_fitness_value_history = np.array(Result_dict['best_fitness_value_history'])
 
 class baseIndividual():
     def __init__(self, search_space : np.ndarray):
@@ -38,7 +38,7 @@ class baseSIOA():
 
     individual_class_build_up_func = baseIndividual # 个体类的构造函数
 
-    def __init__(self, objective_func, individuals_num, search_space, constraint_func = None):        
+    def __init__(self, objective_func, individuals_num : int, search_space : np.ndarray, constraint_func = None):        
         self.objective_func = objective_func
         self.individuals_num = individuals_num
         self.search_space = search_space
@@ -82,13 +82,10 @@ class baseSIOA():
     def __get_next_generation__(self):
         pass
 
-    def iteration(self, iter_num : int) -> InterationResult:
+    def iteration(self, iter_num : int) -> IterationResult:
         pass
 
 def Selection(Swarm : baseSIOA, have_fitness = True):
-    '''
-        选择机制
-    '''
     if not have_fitness:
         Swarm.get_fitness()
     
