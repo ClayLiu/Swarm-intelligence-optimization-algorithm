@@ -29,6 +29,8 @@ class base_unconstrained_objective_func():
         self.best_f_x = 0
         self.best_x = None
 
+        self.name = self.__class__.__name__
+
     def func(self, x : np.ndarray) -> float:
         '''
             目标函数
@@ -44,7 +46,8 @@ class base_unconstrained_objective_func():
             :param step_length: 画图步长 \n
             :param save_figure_path: 图像保存路径 \n
             :param dpi: 图像 dpi \n
-            :param area: 画图区域 如 (-10, 10) 则绘画 x \in (-10, 10) , y \in (-10, 10) 的区域
+            :param area: 画图区域 如 (-10, 10) 则绘画 x \in (-10, 10) , y \in (-10, 10) 的区域 \n
+            :param hold_on: 是否暂时不显示 \n
         '''
         x_dim_save = self.x_dim
         self.__init__(2)
@@ -74,7 +77,7 @@ class base_unconstrained_objective_func():
         fig = plt.figure()
         ax = Axes3D(fig)
         ax.plot_surface(u, v, z, cmap = plt.cm.RdYlGn)
-        plt.title('${}$'.format(self.func_formula_str))
+        plt.title(self.name)
         
         if save_figure_path:
             plt.savefig(save_figure_path, dpi = dpi)
@@ -296,7 +299,7 @@ class Foxholes(base_unconstrained_objective_func):
         
 
 class Schaffer(base_unconstrained_objective_func):
-    search_space_tuple = (-100, 100)
+    search_space_tuple = (-4, 4)
     def __init__(self, n : int = 2):
         super(Schaffer, self).__init__(2)        
 
@@ -308,5 +311,75 @@ class Schaffer(base_unconstrained_objective_func):
         sum_square_x = np.sum(x ** 2)
         return ((sin(sqrt(sum_square_x)) ** 2 - 0.5) / ((1 + 0.001 * sum_square_x) ** 2)) - 0.5
 
-unimodal_function = [Sphere, Step, Schwefel_1_2, Schwefel_2_21, Schwefel_2_22, Rosenbrock]
-multimodal_functions = [Rastrigin, Schwefel_2_26, Griewank, Ackley, Foxholes, Schaffer]
+class Hansen(base_unconstrained_objective_func):
+    search_space_tuple = (-5, 5)
+    
+    def __init__(self, n = 2):
+        super(Hansen, self).__init__(2)
+        self.best_f_x = -176.5417931362699
+    
+    def func(self, x : np.ndarray) -> float:
+        super(Hansen, self).func(x)
+        part_one = 0
+        part_two = 0
+
+        for i in range(1, 5 + 1):
+            part_one += i * cos((i - 1) * x[0] + i)
+            part_two += i * cos((i + 1) * x[1] + i)
+
+        return part_one * part_two
+
+unimodal_functions = [
+    Sphere, 
+    Step, 
+    Schwefel_1_2, 
+    Schwefel_2_21, 
+    Schwefel_2_22, 
+    Rosenbrock
+]
+
+multimodal_functions = [
+    Rastrigin, 
+    Schwefel_2_26, 
+    Griewank, 
+    Ackley, 
+    Foxholes, 
+    Schaffer,
+    Hansen
+]
+
+unimodal_functions_name = [
+    'Sphere', 
+    'Step', 
+    'Schwefel_1_2', 
+    'Schwefel_2_21', 
+    'Schwefel_2_22', 
+    'Rosenbrock'
+]
+
+multimodal_functions_name = [
+    'Rastrigin', 
+    'Schwefel_2_26', 
+    'Griewank', 
+    'Ackley', 
+    'Foxholes', 
+    'Schaffer',
+    'Hansen'
+]
+
+# 一个论文里面的维度设置
+function_n_dict = {
+    'Rosenbrock'    :    2,
+    'Schwefel_1_2'  :   10, 
+    'Step'          :   10,  
+    'Sphere'        :   60,  
+    'Schwefel_2_21' :  200,
+    'Schwefel_2_22' :  120,
+    'Schwefel_2_26' :    2,
+    'Schaffer'      :    2,
+    'Foxholes'      :    2,
+    'Rastrigin'     :   10,
+    'Ackley'        :   60,
+    'Griewank'      :  120,
+    'Hansen'        :    2   
+}
