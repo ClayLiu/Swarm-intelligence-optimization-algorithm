@@ -2,7 +2,7 @@ import numpy as np
 from tqdm import tqdm
 
 from Common.constants import *
-from Common.SwarmIntelligenceOptimizationAlgorithm import baseIndividual, InterationResult, baseSIOA
+from Common.SwarmIntelligenceOptimizationAlgorithm import baseIndividual, IterationResult, baseSIOA
 
 
 class Particle(baseIndividual):
@@ -110,7 +110,7 @@ class ParticleSwarm(baseSIOA):
                 self.global_best_position = particle.position.copy()
 
 
-    def iteration(self, iter_num : int, if_show_process = True) -> InterationResult:
+    def iteration(self, iter_num : int, if_show_process = True) -> IterationResult:
         '''
             粒子群算法的迭代函数 \n
             :param iter_num: 最大迭代次数 \n
@@ -130,13 +130,13 @@ class ParticleSwarm(baseSIOA):
         for particle, fitness in zip(self.particle_swarm, self.fitness):
             particle.update_prev_best(fitness)
 
-        interator = tqdm(range(iter_num)) if if_show_process else range(iter_num)   # 根据 if_show_process 选择迭代器
-        for t in interator:
+        iterator = tqdm(range(iter_num)) if if_show_process else range(iter_num)   # 根据 if_show_process 选择迭代器
+        for t in iterator:
             omega = self.omega_formula(t, iter_num)
             self.__get_next_generation__(omega)
             best_fitness_value.append(self.global_best_fitness)
 
-        return InterationResult(
+        return IterationResult(
             {
                 'best_position' : self.global_best_position,
                 'best_fitness' : self.global_best_fitness,
